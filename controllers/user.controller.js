@@ -2,6 +2,8 @@ import UserModel from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import sendEmail from "../config/sendEmail.js";
 import verifyEmailTemplate from "../utils/verifyEmailTemplate.js";
+import generateAccessToken from "../utils/generateAccessToken.js";
+import generateRefreshToken from "../utils/generateRefreshToken.js";
 
 export async function registerUserController(request, response) {
   try {
@@ -133,6 +135,20 @@ export async function loginController(request, response) {
         success: false,
       })
     }
+
+    // match password
+    const checkPassword = await bcrypt.compare(password, user.password);
+
+    if(!checkPassword){
+      return response.status(400).json({
+        message: "Invalid password",
+        error: true,
+        success: false,
+      });
+    }
+
+    const accessToken = await generateAccessToken(user._id);
+    const refreshToken = await generateRefreshToken(user._id);
 
   } catch (error) {
     return response.status(500).json({
