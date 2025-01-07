@@ -118,9 +118,16 @@ export async function loginController(request, response) {
   try {
     const { email, password } = request.body;
 
-    const user =  await UserModel.findOne({email});
-    if(!user){
+    if(!email || !password) {
+      return response.status(400).json({
+        message: "All fields are required",
+        error: true,
+        success: false,
+      });
+    }
 
+    const user = await UserModel.findOne({ email });
+    if (!user) {
       return response.status(400).json({
         message: "User not register",
         error: true,
@@ -128,18 +135,19 @@ export async function loginController(request, response) {
       });
     }
 
-    if(user.status !== 'Active'){
+    if (user.status !== "Active") {
       return response.status(400).json({
-        message: "User account is not active. Please contact your administrator",
+        message:
+          "User account is not active. Please contact your administrator",
         error: true,
         success: false,
-      })
+      });
     }
 
     // match password
     const checkPassword = await bcrypt.compare(password, user.password);
 
-    if(!checkPassword){
+    if (!checkPassword) {
       return response.status(400).json({
         message: "Invalid password",
         error: true,
@@ -149,6 +157,25 @@ export async function loginController(request, response) {
 
     const accessToken = await generateAccessToken(user._id);
     const refreshToken = await generateRefreshToken(user._id);
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+    };
+    response.cookie("accessToken", accessToken, cookieOptions);
+    response.cookie("refreshToken", refreshToken, cookieOptions);
+
+    return response.status(200).json({
+      message: "Login successful",
+      error: false,
+      success: true,
+      data: {
+        accessToken,
+        refreshToken,
+        user,
+      }
+    });
 
   } catch (error) {
     return response.status(500).json({
