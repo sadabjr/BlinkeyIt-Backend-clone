@@ -185,3 +185,30 @@ export async function loginController(request, response) {
     });
   }
 }
+
+// logout controller
+export async function logoutController(request, response){
+try{
+  const cookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+  };
+
+  response.clearCookie("accessToken", cookieOptions);
+  response.clearCookie("refreshToken", cookieOptions);
+
+  return response.status(200).json({
+    message: "Logout successful",
+    error: false,
+    success: true,
+  })
+
+}catch(error){
+  return response.status(500).json({
+    message: error.message || error,
+    error: true,
+    success: false,
+  })
+}
+}
